@@ -1,0 +1,4 @@
+geocode_task:
+  description: "Convert the address '{{ address }}' to coordinates using Geoapify."
+  expected_output: "Latitude and longitude of the address."
+  agent: geocoder_agent
