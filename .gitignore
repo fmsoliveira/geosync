@@ -46,6 +46,9 @@ data/
 models/
 credentials/
 
+# Satellite images folder
+raw_images/
+
 # Arquivos temporários
 *.tmp
 .DS_Store

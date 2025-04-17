@@ -2,6 +2,7 @@ import requests
 from pydantic import BaseModel
 from typing import Type
 from crewai.tools import BaseTool
+import json
 
 class GeocodeInput(BaseModel):
     address: str
@@ -14,25 +15,36 @@ class GeoapifyTool(BaseTool):
     def _run(self, address: str) -> str:
         import os
         api_key = os.environ.get("GEOAPIFY_KEY")
+        
         if not api_key:
-            return "Geoapify API key not found. Please set GEOAPIFY_KEY environment variable."
-
+            return json.dumps({"error": "Geoapify API key not found."})
+        
         url = "https://api.geoapify.com/v1/geocode/search"
         params = {
             "text": address,
             "apiKey": api_key,
             "format": "json"
         }
-
+        
         response = requests.get(url, params=params)
+        
         if response.status_code != 200:
-            return f"Error contacting Geoapify: {response.text}"
-
+            return json.dumps({"error": "Geoapify API error."})
+        
         data = response.json()
-        if not data.get("features"):
-            return "Address not found."
+        
+        # Verifica se há resultados em vez de features
+        if not data.get("results") or len(data["results"]) == 0:
+            return json.dumps({"error": "Address not found."})
+        
+        # Extrai as coordenadas do primeiro resultado
+        first_result = data["results"][0]
+        lat = first_result["lat"]
+        lon = first_result["lon"]
+        formatted = first_result["formatted"]
 
-        coords = data["features"][0]["geometry"]["coordinates"]
-        formatted = data["features"][0]["properties"]["formatted"]
-
-        return f"Address: {formatted}\nLatitude: {coords[1]}\nLongitude: {coords[0]}"
+        return json.dumps({
+            "lat": lat,
+            "lon": lon#,
+            #"formatted_address": formatted
+        })

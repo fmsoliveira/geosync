@@ -1,9 +1,19 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from geosync.tools.geocoding_tool import GeoapifyTool
 from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+
+# import tools
+from geosync.tools.geocoding_tool import GeoapifyTool
+from geosync.tools.earthengine_tool import EarthEngineImageFetcherTool
+from geosync.tools.image_difference_analyzer_tool import ImageDifferenceAnalyzerTool
+
+import os
 
 load_dotenv()
+
+print("CREWAI_TELEMETRY_DISABLED:", os.getenv("CREWAI_TELEMETRY_DISABLED"))
+
 
 # If you want to run a snippet of code before or after the crew starts,
 # you can use the @before_kickoff and @after_kickoff decorators
@@ -21,48 +31,67 @@ class Geosync():
 
     # If you would like to add tools to your agents, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
-    # @agent
-    # def researcher(self) -> Agent:
-    #     return Agent(
-    #         config=self.agents_config['researcher'],
-    #         verbose=True
-    #     )
-
-    # @agent
-    # def reporting_analyst(self) -> Agent:
-    #     return Agent(
-    #         config=self.agents_config['reporting_analyst'],
-    #         verbose=True
-    #     )
 
     @agent
     def geocoder_agent(self) -> Agent:
         return Agent(
             config=self.agents_config['geocoder_agent'],
             tools=[GeoapifyTool()],
+            llm=ChatOpenAI(
+                model="gpt-3.5-turbo",
+                temperature=0.7,
+                api_key=os.getenv("OPENAI_API_KEY")
+            ),
+            verbose=True
+        )
+
+    @agent
+    def satellite_image_agent(self) -> Agent:
+        return Agent(
+            config=self.agents_config['satellite_image_agent'],
+            tools=[EarthEngineImageFetcherTool()],
+            llm=ChatOpenAI(
+                model="gpt-3.5-turbo",
+                temperature=0.4,
+                api_key=os.getenv("OPENAI_API_KEY")
+            ),
+            verbose=True
+        )
+
+    @agent
+    def image_analysis_agent(self) -> Agent:
+        return Agent(
+            config=self.agents_config['image_analysis_agent'],
+            tools=[ImageDifferenceAnalyzerTool()],
+            llm=ChatOpenAI(
+                model="gpt-3.5-turbo",
+                temperature=0.3,
+                api_key=os.getenv("OPENAI_API_KEY")
+            ),
             verbose=True
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    # @task
-    # def research_task(self) -> Task:
-    #     return Task(
-    #         config=self.tasks_config['research_task'],
-    #     )
-
-    # @task
-    # def reporting_task(self) -> Task:
-    #     return Task(
-    #         config=self.tasks_config['reporting_task'],
-    #         output_file='report.md'
-    #     )
 
     @task
     def geocode_task(self) -> Task:
         return Task(
-            config=self.tasks_config['geocode_task'],
+            config=self.tasks_config['geocode_task']#,
+            #inputs={"address": "Largo dos Colegiais, Évora"}
+        )
+
+    @task
+    def fetch_satellite_image_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['fetch_satellite_image_task']
+        )
+
+    @task
+    def analyze_image_differences_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['analyze_image_differences_task']
         )
 
     @crew
