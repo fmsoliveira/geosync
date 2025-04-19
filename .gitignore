@@ -66,3 +66,33 @@ credentials.json
 # Outros
 .history/
 .ipynb_checkpoints/
+
+# Rust build output
+/target/
+**/*.rs.bk
+#Cargo.lock
+
+# Node.js / Vite
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# notes files
+commands.txt

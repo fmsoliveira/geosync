@@ -1,54 +1,100 @@
-# Geosync Crew
+License: MIT
 
-Welcome to the Geosync Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+# 🌍 Geosync Project
 
-## Installation
+**License: MIT**
 
-Ensure you have Python >=3.10 <3.13 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+## 🚀 Overview
 
-First, if you haven't already, install uv:
+This project is a **monorepo** that combines a high-performance Rust API with a Python [CrewAI](https://crewai.com/) application for geospatial intelligence.
+
+- The **Rust API** (using [Axum](https://github.com/tokio-rs/axum)) serves as the backend interface, exposing endpoints to external clients.
+- The API delegates geospatial processing tasks to a **CrewAI Python application**, which leverages advanced agents and tools for geospatial analysis.
+
+## 🛰️ What does it do?
+
+- Given a physical address, the system retrieves geospatial data for the corresponding location.
+- The current implementation focuses on analyzing **vegetation change** by computing the NDVI (Normalized Difference Vegetation Index) between two dates, using satellite imagery.
+
+## 🛠️ Technologies Used
+
+- **🦀 Rust** (API backend)
+  - [Axum](https://github.com/tokio-rs/axum) – Web framework
+  - [Tokio](https://tokio.rs/) – Async runtime
+  - [Serde](https://serde.rs/) – Serialization
+- **🐍 Python** (CrewAI app)
+  - [CrewAI](https://crewai.com/) – Multi-agent orchestration
+  - [Geopandas](https://geopandas.org/) – Geospatial data processing
+  - [Earth Engine](https://earthengine.google.com/) – Satellite imagery (via API)
+  - [NumPy, Pillow, etc.] – Image processing
+- **Other**
+  - [🐳 Docker Compose](https://docs.docker.com/compose/) (optional, for orchestration)
+  - 🛠️ Planned: [Vite](https://vitejs.dev/) + [React](https://react.dev/) for frontend
+
+## ⚡ Installation
+
+### Prerequisites
+
+- 🦀 [Rust](https://www.rust-lang.org/tools/install)
+- 🐍 [Python 3.10+](https://www.python.org/downloads/)
+- 📦 [Poetry](https://python-poetry.org/) or `pip`/`venv`
+- 🐳 (Optional) [Docker Compose](https://docs.docker.com/compose/)
+
+### 1. Clone the repository
 
 ```bash
-pip install uv
+git clone [https://github.com/fmsoliveira/geosync.git](https://github.com/fmsoliveira/geosync.git)
+cd geosync_project
 ```
 
-Next, navigate to your project directory and install the dependencies:
-
-(Optional) Lock the dependencies and install them by using the CLI command:
-```bash
-crewai install
-```
-### Customizing
-
-**Add your `OPENAI_API_KEY` into the `.env` file**
-
-- Modify `src/geosync/config/agents.yaml` to define your agents
-- Modify `src/geosync/config/tasks.yaml` to define your tasks
-- Modify `src/geosync/crew.py` to add your own logic, tools and specific args
-- Modify `src/geosync/main.py` to add custom inputs for your agents and tasks
-
-## Running the Project
-
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+### 2. Set up the Python environment
 
 ```bash
-$ crewai run
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+# Or, if using poetry:
+# poetry install
 ```
 
-This command initializes the geosync Crew, assembling the agents and assigning them tasks as defined in your configuration.
+### 3. Set up the Rust API
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+```bash
+cd ../api
+cargo build --release
+```
 
-## Understanding Your Crew
+### 4.(Optional) Set up environment variables
 
-The geosync Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+Create a .env file in geosync/ for API keys (e.g., Google Earth Engine, Geoapify, etc.)
 
-## Support
+### 5. Run the services
 
-For support, questions, or feedback regarding the Geosync Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+```bash
+cd api
+cargo run
+```
 
-Let's create wonders together with the power and simplicity of crewAI.
+The API will call the CrewAI Python app automatically as needed.
+
+## 📡 Usage
+
+Send a POST request to the API endpoint /crew with a JSON payload:
+
+```json
+{
+  "address": "Avenida Doutor Alfredo Bensaúde, Lisboa, Portugal",
+  "first_date": "2023-04-06",
+  "second_date": "2024-04-13",
+  "current_year": "2024"
+}
+```
+
+The API will return the NDVI difference results and file paths to the generated satellite images.
+
+## 🗺️ Roadmap
+
+[x] 🦀 Rust API integration with 🐍 Python CrewAI
+[x] 🌱 NDVI vegetation change detection
+[ ] 🖥️ Frontend application (Vite + React) for user interaction
+[ ] 🧑‍💻 Support for additional geospatial analyses
