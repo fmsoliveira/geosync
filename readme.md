@@ -1,5 +1,3 @@
-License: MIT
-
 # 🌍 Geosync Project
 
 **License: MIT**
@@ -94,7 +92,7 @@ The API will return the NDVI difference results and file paths to the generated 
 
 ## 🗺️ Roadmap
 
-_[x] 🦀 Rust API integration with 🐍 Python CrewAI
-_[x] 🌱 NDVI vegetation change detection
-_[ ] 🖥️ Frontend application (Vite + React) for user interaction
-_[ ] 🧑‍💻 Support for additional geospatial analyses
+- [x] 🦀 Rust API integration with 🐍 Python CrewAI
+- [x] 🌱 NDVI vegetation change detection
+- [ ] 🖥️ Frontend application (Vite + React) for user interaction
+- [ ] 🧑‍💻 Support for additional geospatial analyses

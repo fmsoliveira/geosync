@@ -17,6 +17,8 @@ ENV/
 .venv
 env.bak/
 venv.bak/
+venv*/
+venv2/
 
 # Arquivos de configuração local
 .env
