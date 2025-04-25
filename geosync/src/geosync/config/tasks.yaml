@@ -17,7 +17,10 @@ fetch_satellite_image_task:
   dependencies:
     - geocode_task
   input:
-    coordinates: "{{ tasks.geocode_task.output }}"
+    lat: "{{ tasks.geocode_task.output.lat }}"
+    lon: "{{ tasks.geocode_task.output.lon }}"
+    first_date: "{{ inputs.first_date }}"
+    second_date: "{{ inputs.second_date }}"
   output_key: satellite_images_paths
 
 analyze_image_differences_task:
@@ -31,14 +34,13 @@ analyze_image_differences_task:
     image_path_1: "{{ tasks.fetch_satellite_image_task.output.sat_image_path_1 }}"
     image_path_2: "{{ tasks.fetch_satellite_image_task.output.sat_image_path_2 }}"
   output_key: rgb_images_path
-
-urban_growth_task:
-  description: >
-    Analyze the two images saved in output directory and find the urban growth.
-  expected_output: A raster image showing the new buildings.
-  agent: urban_growth_agent
-  dependencies:
-    - analyze_image_differences_task
-  input:
-    image_path_1: "{{ tasks.analyze_image_differences_task.output.image_path_1 }}"
-    image_path_2: "{{ tasks.analyze_image_differences_task.output.image_path_2 }}"
+# urban_growth_task:
+#   description: >
+#     Analyze the two images saved in output directory and find the urban growth.
+#   expected_output: A raster image showing the new buildings.
+#   agent: urban_growth_agent
+#   dependencies:
+#     - analyze_image_differences_task
+#   input:
+#     image_path_1: "{{ tasks.analyze_image_differences_task.output.image_path_1 }}"
+#     image_path_2: "{{ tasks.analyze_image_differences_task.output.image_path_2 }}"

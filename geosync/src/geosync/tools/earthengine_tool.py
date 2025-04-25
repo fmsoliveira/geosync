@@ -119,6 +119,8 @@ class EarthEngineImageFetcherTool(BaseTool):
         2. JSON object: {"input_data": "lat,lon[,start_date][,end_date]"}
         3. Array of objects: [{"latlon": "lat,lon", "date": "YYYY-MM-DD"}, ...]
         """
+        print("[**DEBUG**] EarthEngineImageFetcherTool _run called!", file=sys.stderr)
+        logging.debug("[**DEBUG**] EarthEngineImageFetcherTool _run called!")
         
         #print(f"Resultado depois do parse: {lat}, {lon}, {formatted_address}", file=sys.stderr)
         print(f"Resultado depois do parse: {lat}, {lon}", file=sys.stderr)
@@ -178,6 +180,12 @@ class EarthEngineImageFetcherTool(BaseTool):
             # Download the images
             first_image_result = self.download_image_if_not_exists(first_image_url, first_image_filename)
             second_image_result = self.download_image_if_not_exists(second_image_url, second_image_filename)
+
+            print("[**DEBUG**] _run INPUTS:", lat, lon, first_date, second_date, file=sys.stderr)
+            logging.debug(f"[**DEBUG**] _run INPUTS: {lat}, {lon}, {first_date}, {second_date}")
+
+            print("[**DEBUG**] _run OUTPUTS:", first_image_result, second_image_result, file=sys.stderr)
+            logging.debug(f"[**DEBUG**] _run OUTPUTS: {first_image_result}, {second_image_result}")
             
             return {
                 "sat_image_path_1": first_image_result,

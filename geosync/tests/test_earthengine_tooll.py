@@ -23,27 +23,18 @@ if __name__ == "__main__":
         print(f"Erro ao inicializar o Earth Engine: {e}")
 
     # Test with JSON input
-    input_json = json.dumps({
+    input_json = {
         "lat": 38.7169,
         "lon": -9.1399,
-        "formatted_address": "Lisboa, Portugal"
-    })
+        "first_date": "2023-04-06",
+        "second_date": "2024-04-13"
+    }
 
-    input_two = json.dumps({
-        "input_data": "38.7169,-9.1399,2025-04-06,2025-04-13"
-    })
-
-    input_three = json.dumps({
-        "lat": 37.42315153585935, "lon": -122.08350820058713
-    })
-
-    input_four = "The coordinates are: {\"lat\": 38.5732763, \"lon\": -7.9058921, \"formatted_address\": \"...\"}"
-    
     try:
         print(f"A executar a tool com input:")    
         logging.info(f"A executar a tool com input:")
         
-        resultado = tool._run(38.5732763, -7.9058921)
+        resultado = tool._run(**input_json)
         
         print(f"--- Resultado da Tool ---")
         print(resultado)

@@ -45,6 +45,5 @@ class GeoapifyTool(BaseTool):
 
         return {
             "lat": lat,
-            "lon": lon#,
-            #"formatted_address": formatted
+            "lon": lon
         }
