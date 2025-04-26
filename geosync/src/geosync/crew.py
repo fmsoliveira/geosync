@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 from geosync.tools.geocoding_tool import GeoapifyTool
 from geosync.tools.earthengine_tool import EarthEngineImageFetcherTool
 from geosync.tools.image_difference_analyzer_tool import ImageDifferenceAnalyzerTool
-#from geosync.tools.urban_analysis_tool import UrbanGrowthAnalyzerTool
+from geosync.tools.urban_analysis_tool import UrbanGrowthAnalyzerTool
 
 import os
 
@@ -72,18 +72,18 @@ class Geosync():
             verbose=True
         )
 
-    # @agent
-    # def urban_growth_agent(self) -> Agent:
-    #     return Agent(
-    #         config=self.agents_config['urban_growth_agent'],
-    #         tools=[UrbanGrowthAnalyzerTool()],
-    #         llm=ChatOpenAI(
-    #             model="gpt-3.5-turbo",
-    #             temperature=0.3,
-    #             api_key=os.getenv("OPENAI_API_KEY")
-    #         ),
-    #         verbose=True
-    #     )
+    @agent
+    def urban_growth_agent(self) -> Agent:
+        return Agent(
+            config=self.agents_config['urban_growth_agent'],
+            tools=[UrbanGrowthAnalyzerTool()],
+            llm=ChatOpenAI(
+                model="gpt-3.5-turbo",
+                temperature=0.3,
+                api_key=os.getenv("OPENAI_API_KEY")
+            ),
+            verbose=True
+        )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
@@ -108,11 +108,11 @@ class Geosync():
             config=self.tasks_config['analyze_image_differences_task']
         )
 
-    # @task
-    # def urban_growth_task(self) -> Task:
-    #     return Task(
-    #         config=self.tasks_config['urban_growth_task']
-    #     )
+    @task
+    def urban_growth_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['urban_growth_task']
+        )
 
     @crew
     def crew(self) -> Crew:
