@@ -13,6 +13,7 @@ This project is a **monorepo** that combines a high-performance Rust API with a 
 
 - Given a physical address, the system retrieves geospatial data for the corresponding location.
 - The current implementation focuses on analyzing **vegetation change** by computing the NDVI (Normalized Difference Vegetation Index) between two dates, using satellite imagery.
+- The system features an urban analysis tool that analyzes satellite images to automatically segment and identify buildings, using a fine-tuned SegFormer model (nvidia/segformer-b0-finetuned-ade-512-512).
 
 ## 🛠️ Technologies Used
 
@@ -94,5 +95,6 @@ The API will return the NDVI difference results and file paths to the generated 
 
 - [x] 🦀 Rust API integration with 🐍 Python CrewAI
 - [x] 🌱 NDVI vegetation change detection
+- [x] 🏙️ Urban analysis tool (🚧 🛠️ work in progress)
 - [ ] 🖥️ Frontend application (Vite + React) for user interaction
 - [ ] 🧑‍💻 Support for additional geospatial analyses
