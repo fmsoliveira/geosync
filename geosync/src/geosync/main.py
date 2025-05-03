@@ -35,7 +35,7 @@ def run(inputs=None):
         else:
             # fallback para valores default
             inputs = {
-                "address": "Estrada da Medrosa, 2780-070 Oeiras",
+                "address": "Aeroporto de Lisboa",
                 "first_date": "2024-07-10",
                 "second_date": "2024-07-30",
                 "current_year": str(datetime.datetime.now().year)

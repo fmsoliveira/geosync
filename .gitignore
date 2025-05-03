@@ -98,3 +98,9 @@ $RECYCLE.BIN/
 
 # notes files
 commands.txt
+
+# ignore fine-tuned models
+*.bin
+*.pt
+*.onnx
+modelo_segformer_finalizado/
