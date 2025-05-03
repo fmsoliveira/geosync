@@ -103,10 +103,9 @@ class EarthEngineImageFetcherTool(BaseTool):
         # Aproximação: 1 grau de latitude ~ 111.32 km
         degrees_per_meter = 1 / 111320.0  # Aproximadamente
 
-        # No lugar de dividir por 2, usamos o valor completo já que cada quadrante terá max_pixels
         side_deg = max_side_meters * degrees_per_meter
 
-        # Cria os 4 quadrantes
+        # Cria 4 quadrantes
         # Quadrante 1: Superior Direito (NE)
         q1 = ee.Geometry.Rectangle([lon, lat, lon + side_deg, lat + side_deg])
         

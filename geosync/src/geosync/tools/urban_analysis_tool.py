@@ -32,25 +32,6 @@ class UrbanGrowthAnalyzerTool(BaseTool):
         img = Image.open(image_path).convert("RGB")
         img = img.resize((512, 512))  # Ajuste para o tamanho esperado pelo SegFormer
         
-        # # Converter para numpy e normalizar os valores para [0,1]
-        # # Explicitamente especificar dtype=np.float32 (muito importante!)
-        # img_np = np.array(img, dtype=np.float32) / 255.0
-        
-        # # Normalizar com média e desvio padrão do ImageNet
-        # # Garantir que estas arrays também são float32
-        # mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-        # std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-        # img_np = (img_np - mean) / std
-        
-        # # Reorganizar para formato NCHW (batch, canais, altura, largura)
-        # img_np = np.transpose(img_np, (2, 0, 1))
-        # img_np = np.expand_dims(img_np, axis=0)
-    
-        # # Verificação adicional para garantir o tipo correto
-        # if img_np.dtype != np.float32:
-        #     img_np = img_np.astype(np.float32)
-        
-        # return img_np, img.size
         img_np = np.array(img, dtype=np.float32) / 255.0
 
         mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -60,7 +41,6 @@ class UrbanGrowthAnalyzerTool(BaseTool):
         img_np = np.transpose(img_np, (2, 0, 1))
         img_np = np.expand_dims(img_np, axis=0)
 
-        # Aqui é onde realmente importa!
         img_np = img_np.astype(np.float32)
 
         return img_np, img.size     
@@ -73,13 +53,10 @@ class UrbanGrowthAnalyzerTool(BaseTool):
         outputs = self._model.run([self._output_name], {self._input_name: input_data})
         
         # Processar a saída para obter a máscara binária de construções
-        # Assumindo que o modelo SegFormer retorna logits para cada classe
         logits = outputs[0]
         
-        # Se o output for um tensor de múltiplas classes, pegamos o que representa "edifícios"
-        # Ajuste conforme a estrutura do seu modelo específico
         if len(logits.shape) == 4:  # [batch, num_classes, height, width]
-            building_class_index = 0  # Ajuste este índice conforme necessário
+            building_class_index = 0 
             pred_mask = logits[0, building_class_index]
         else:  # Se já for uma máscara binária
             pred_mask = logits[0, 0]
@@ -105,18 +82,6 @@ class UrbanGrowthAnalyzerTool(BaseTool):
         n_buildings_2 = len(contours2)
         new_buildings = n_buildings_2 - n_buildings_1
 
-        # # Imagem de diferença
-        # diff_mask = (mask2.astype(int) - mask1.astype(int)) > 0
-        # diff_img_path = os.path.join(os.getcwd(), "output", "new_buildings_diff.png")
-        # os.makedirs("output", exist_ok=True)
-        # Image.fromarray((diff_mask * 255).astype(np.uint8)).save(diff_img_path)
-        
-        # return {
-        #     "Edifícios na data 1": n_buildings_1,
-        #     "Edifícios na data 2": n_buildings_2,
-        #     "Novas construções": new_buildings,
-        #     "Imagem de diferença guardada em": diff_img_path
-        # }
         # Imagem de diferença
         diff_mask = (mask2.astype(int) - mask1.astype(int)) > 0
         os.makedirs("output", exist_ok=True)

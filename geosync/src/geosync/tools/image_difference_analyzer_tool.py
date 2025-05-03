@@ -70,12 +70,10 @@ class ImageDifferenceAnalyzerTool(BaseTool):
             raise ValueError("Nenhum raster para mesclar")
         
         if len(raster_paths) == 1:
-            # Se há apenas um raster, copie-o diretamente
             # Usar shutil.copyfile em vez de shutil.copy para copiar apenas o conteúdo
             shutil.copyfile(raster_paths[0], output_path)
             return output_path
         
-        # Abra cada arquivo de origem
         src_files_to_mosaic = []
         for raster_path in raster_paths:
             try:
@@ -87,11 +85,9 @@ class ImageDifferenceAnalyzerTool(BaseTool):
         if not src_files_to_mosaic:
             raise ValueError("Nenhum raster pôde ser aberto para mesclagem")
         
-        # Faça a mesclagem
         try:
             mosaic, out_trans = merge(src_files_to_mosaic)
             
-            # Copie os metadados do primeiro raster
             out_meta = src_files_to_mosaic[0].meta.copy()
             out_meta.update({
                 "height": mosaic.shape[1],
@@ -110,7 +106,6 @@ class ImageDifferenceAnalyzerTool(BaseTool):
             print(f"Erro durante a mesclagem: {str(e)}")
             raise
         finally:
-            # Feche os arquivos fonte
             for src in src_files_to_mosaic:
                 src.close()
             
@@ -124,10 +119,10 @@ class ImageDifferenceAnalyzerTool(BaseTool):
         temp_dir = Path(f"temp_merged_{date_prefix}")
         temp_dir.mkdir(exist_ok=True)
         
-        # Para cada quadrante, extraia os TIFFs e encontre a banda
+        # Para cada quadrante, extrair os TIFFs e encontrar a banda
         for quadrant_name, zip_path in quadrant_paths.items():
             try:
-                # Use o prefixo da data para evitar conflitos entre datas diferentes
+                # Usar o prefixo da data para evitar conflitos entre datas diferentes
                 tifs = self.extract_tifs_if_zip(zip_path, prefix=f"{date_prefix}_{quadrant_name}")
                 band_path = self.find_band(tifs, band_id)
                 band_paths.append(band_path)
@@ -138,7 +133,7 @@ class ImageDifferenceAnalyzerTool(BaseTool):
         if not band_paths:
             raise ValueError(f"Nenhuma banda {band_id} encontrada em qualquer quadrante")
         
-        # Une as bandas extraídas com prefixo único para cada data
+        # Unir as bandas extraídas com prefixo único para cada data
         output_path = f"{temp_dir}/merged_band_{band_id}.tif"
         self.merge_rasters(band_paths, output_path)
         
@@ -149,18 +144,18 @@ class ImageDifferenceAnalyzerTool(BaseTool):
         with rasterio.open(path) as src:
             arr = src.read(1).astype(np.float32)
             print(f"[DEBUG] {path}: min={arr.min()}, max={arr.max()}, mean={arr.mean()}")
-            # Verifique se os valores são todos iguais
+            
             if arr.max() == arr.min():
                 print(f"AVISO: Dados constantes na banda {path}: valor={arr.min()}")
                 return arr * 0  # Retorna uma matriz de zeros do mesmo tamanho
                 
-            # Normalização robusta
+            # Normalização
             valid_mask = ~np.isnan(arr) & ~np.isinf(arr)
             if np.sum(valid_mask) > 0:
                 min_val = np.percentile(arr[valid_mask], 2)  # Ignora outliers inferiores
                 max_val = np.percentile(arr[valid_mask], 98) # Ignora outliers superiores
                 
-                # Evite divisão por zero
+                # Evitar a divisão por zero
                 range_val = max_val - min_val
                 if range_val < 1e-6:
                     range_val = 1
@@ -238,7 +233,7 @@ class ImageDifferenceAnalyzerTool(BaseTool):
         try:
             os.makedirs("output", exist_ok=True)
             
-            # Cria diretórios temporários separados para cada data
+            # Criar diretórios temporários separados para cada data
             os.makedirs("temp_merged_first", exist_ok=True)
             os.makedirs("temp_merged_second", exist_ok=True)
             
@@ -308,7 +303,7 @@ class ImageDifferenceAnalyzerTool(BaseTool):
             limit = max(abs(p_low), abs(p_high))
             limit = max(limit, 0.05)  # Garantir um mínimo de contraste
 
-            # Salvar o resultado com limites adaptados aos dados
+            # Guardar o resultado com limites adaptados aos dados
             self.save_raster_with_colormap(
                 ndvi_diff, 
                 "output/ndvi_diff.png", 
@@ -326,7 +321,6 @@ class ImageDifferenceAnalyzerTool(BaseTool):
                 amplification_factor = 5.0
                 ndvi_diff_enhanced = ndvi_diff * amplification_factor
                 
-                # Use esta versão amplificada para visualização
                 self.save_raster_with_colormap(
                     ndvi_diff_enhanced, 
                     "output/ndvi_diff_enhanced.png", 
@@ -335,7 +329,6 @@ class ImageDifferenceAnalyzerTool(BaseTool):
                     vmax=limit * amplification_factor
                 )
                 
-                # Adicionar esta imagem ao retorno
                 result_dict = {
                     "image_path_1": "output/rgb_antiga.png",
                     "image_path_2": "output/rgb_recente.png",
@@ -358,22 +351,6 @@ class ImageDifferenceAnalyzerTool(BaseTool):
             with rasterio.open("output/ndvi_diff.tif", "w", **meta_old) as dst:
                 dst.write(ndvi_diff.astype(rasterio.float32), 1)
             
-            # # Identificação de novas construções (simples)
-            # # Queda significativa no NDVI pode indicar urbanização/novas construções
-            # print("Identificando possíveis novas construções...")
-            # new_buildings = np.zeros_like(ndvi_diff)
-            # new_buildings[(ndvi_diff < -0.15) & (ndvi_recent < 0.3)] = 1  # Queda grande de NDVI e baixo NDVI atual
-            
-            # # Salvar o mapa de possíveis novas construções
-            # self.save_raster_with_colormap(
-            #     new_buildings, 
-            #     "output/new_buildings_diff.png", 
-            #     cmap_name="Reds", 
-            #     vmin=0,
-            #     vmax=1
-            # )
-            # result_dict["new_buildings"] = "output/new_buildings_diff.png"
-            
             return result_dict
             
         except Exception as e:
@@ -383,7 +360,7 @@ class ImageDifferenceAnalyzerTool(BaseTool):
             raise Exception(f"Erro ao analisar diferenças entre as imagens: {str(e)}")
         finally:
             self.cleanup_temp_extracted()
-            # Limpar diretórios temporários de mesclagem
+            # Limpar diretórios temporários
             for temp_dir in ["temp_merged_first", "temp_merged_second"]:
                 if os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
