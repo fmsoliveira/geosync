@@ -9,8 +9,18 @@ if __name__ == "__main__":
     tool = ImageDifferenceAnalyzerTool()
 
     input_json = json.dumps({
-        "image_path_1": "raw_images/satellite_image_38.5732763_-7.9058921_2024-04-06.zip",
-        "image_path_2": "raw_images/satellite_image_38.5732763_-7.9058921_2024-04-13.zip"
+        "first_date_images": {
+            "NE": "raw_images/satellite_image_44.1026_9.8241_2023-07-10_NE.zip",
+            "NO": "raw_images/satellite_image_44.1026_9.8241_2023-07-10_NO.zip",
+            "SO": "raw_images/satellite_image_44.1026_9.8241_2023-07-10_SE.zip",
+            "SE": "raw_images/satellite_image_44.1026_9.8241_2023-07-10_SO.zip"
+        },
+        "second_date_images": {
+            "NE": "raw_images/satellite_image_44.1026_9.8241_2025-04-30_NE.zip",
+            "NO": "raw_images/satellite_image_44.1026_9.8241_2025-04-30_NO.zip",
+            "SO": "raw_images/satellite_image_44.1026_9.8241_2025-04-30_SE.zip",
+            "SE": "raw_images/satellite_image_44.1026_9.8241_2025-04-30_SO.zip"
+        }
     })
 
     try:

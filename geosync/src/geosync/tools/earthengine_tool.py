@@ -1,6 +1,6 @@
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
-from typing import Type
+from typing import Type, List, Dict
 import datetime
 import os
 import requests
@@ -71,18 +71,56 @@ class EarthEngineImageFetcherTool(BaseTool):
             'crs': 'EPSG:4326'
         })
     
-    def get_nearest_image(self, collection: ee.ImageCollection, date: datetime.datetime, window: int = 7) -> ee.Image:
-        for i in range(window):
-            for delta in [-i, i]:
-                candidate_date = date + datetime.timedelta(days=delta)
-                filtered = collection.filterDate(
-                    candidate_date.strftime('%Y-%m-%d'),
-                    (candidate_date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                )
-                if filtered.size().getInfo() > 0:
-                    return filtered.sort("CLOUDY_PIXEL_PERCENTAGE").first()
+    def get_nearest_image(self, collection: ee.ImageCollection, date: datetime.datetime, window: int = 30, after=True) -> ee.Image:
+        if after:
+            filtered = collection.filterDate(
+                date.strftime('%Y-%m-%d'),
+                (date + datetime.timedelta(days=window)).strftime('%Y-%m-%d')
+            )
+        else:
+            filtered = collection.filterDate(
+                (date - datetime.timedelta(days=window)).strftime('%Y-%m-%d'),
+                date.strftime('%Y-%m-%d')
+            )
+        if filtered.size().getInfo() > 0:
+            return filtered.sort("CLOUDY_PIXEL_PERCENTAGE").first()
         return None
 
+    def create_quadrant_roi(self, lat: float, lon: float, scale: int, max_pixels: int = 100) -> List[ee.Geometry.Rectangle]:
+        """
+        Cria 4 ROIs correspondentes aos 4 quadrantes em torno das coordenadas dadas.
+        
+        - lat, lon: centro da área total
+        - scale: resolução desejada em metros/pixel (ex: 10, 30, 100)
+        - max_pixels: número máximo de pixels por lado para cada quadrante
+
+        Returns:
+            Lista de 4 ee.Geometry.Rectangle, um para cada quadrante
+        """
+        # Calcula o tamanho do lado da área segura em metros
+        max_side_meters = scale * max_pixels  # Ex: 10 m * 5000 = 50 km lado máximo
+
+        # Aproximação: 1 grau de latitude ~ 111.32 km
+        degrees_per_meter = 1 / 111320.0  # Aproximadamente
+
+        # No lugar de dividir por 2, usamos o valor completo já que cada quadrante terá max_pixels
+        side_deg = max_side_meters * degrees_per_meter
+
+        # Cria os 4 quadrantes
+        # Quadrante 1: Superior Direito (NE)
+        q1 = ee.Geometry.Rectangle([lon, lat, lon + side_deg, lat + side_deg])
+        
+        # Quadrante 2: Superior Esquerdo (NO)
+        q2 = ee.Geometry.Rectangle([lon - side_deg, lat, lon, lat + side_deg])
+        
+        # Quadrante 3: Inferior Esquerdo (SO)
+        q3 = ee.Geometry.Rectangle([lon - side_deg, lat - side_deg, lon, lat])
+        
+        # Quadrante 4: Inferior Direito (SE)
+        q4 = ee.Geometry.Rectangle([lon, lat - side_deg, lon + side_deg, lat])
+        
+        return [q1, q2, q3, q4]
+        
     def create_safe_roi(self, lat: float, lon: float, scale: int, max_pixels: int = 100):
         """
         Cria uma ROI dinâmica centrada nas coordenadas dadas, com dimensões adaptadas à escala,
@@ -110,34 +148,67 @@ class EarthEngineImageFetcherTool(BaseTool):
             lat + half_side_deg
         ])
 
+    def process_quadrant_images(self, lat: float, lon: float, first_date: datetime.datetime, 
+                               second_date: datetime.datetime, scale: int, max_pixels: int = 256) -> Dict:
+        """
+        Processa os 4 quadrantes e retorna os resultados.
+        """
+        quadrants = self.create_quadrant_roi(lat, lon, scale, max_pixels)
+        quadrant_names = ["NE", "NO", "SO", "SE"]
+        
+        collection = self.get_image_collection(ee.Geometry.MultiPolygon(quadrants))
+
+        #dates_window = second_date - first_date
+        
+        first_image = self.get_nearest_image(collection, first_date)
+        second_image = self.get_nearest_image(collection, second_date)
+        
+        if not first_image:
+            return {"error": f"No image found for start date: {first_date.date()}"}
+        
+        if not second_image:
+            return {"error": f"No image found for end date: {second_date.date()}"}
+            
+        print("First image ID:", first_image.get("system:index").getInfo())
+        print("Second image ID:", second_image.get("system:index").getInfo())
+        
+        results = {
+            "first_date": {},
+            "second_date": {}
+        }
+        
+        # Process each quadrant for both dates
+        for i, (quadrant, name) in enumerate(zip(quadrants, quadrant_names)):
+            # First date
+            first_url = self.get_image_url(first_image, quadrant, scale)
+            first_filename = f"satellite_image_{lat}_{lon}_{first_date.strftime('%Y-%m-%d')}_{name}.zip"
+            first_result = self.download_image_if_not_exists(first_url, first_filename)
+            results["first_date"][name] = first_result
+            
+            # Second date
+            second_url = self.get_image_url(second_image, quadrant, scale)
+            second_filename = f"satellite_image_{lat}_{lon}_{second_date.strftime('%Y-%m-%d')}_{name}.zip"
+            second_result = self.download_image_if_not_exists(second_url, second_filename)
+            results["second_date"][name] = second_result
+        
+        return results
+
     def _run(self, lat: float, lon: float, first_date: str, second_date: str) -> str:
         """
-        Process input data and fetch satellite images.
-        
-        Expected input formats:
-        1. Direct format: "lat,lon[,start_date][,end_date]"
-        2. JSON object: {"input_data": "lat,lon[,start_date][,end_date]"}
-        3. Array of objects: [{"latlon": "lat,lon", "date": "YYYY-MM-DD"}, ...]
+        Process input data and fetch satellite images for 4 quadrants.
         """
         print("[**DEBUG**] EarthEngineImageFetcherTool _run called!", file=sys.stderr)
         logging.debug("[**DEBUG**] EarthEngineImageFetcherTool _run called!")
         
-        #print(f"Resultado depois do parse: {lat}, {lon}, {formatted_address}", file=sys.stderr)
         print(f"Resultado depois do parse: {lat}, {lon}", file=sys.stderr)
         start_date = datetime.datetime.strptime(first_date, "%Y-%m-%d")
         end_date = datetime.datetime.strptime(second_date, "%Y-%m-%d")
-
-        # # Define o intervalo de datas
-        # date_now = datetime.datetime.now()
-        # start_date = date_now - datetime.timedelta(days=7)
-        # end_date = date_now
 
         GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         if GOOGLE_APPLICATION_CREDENTIALS is None:
             return "Error: GOOGLE_APPLICATION_CREDENTIALS not found in environment variables"
 
         try:
-            #ee.Initialize(project_id="ee-geosync-crewai")
             ee.Initialize(project="ee-syncearth")
             logging.debug("Autenticação GEE bem-sucedida via Conta de Serviço (env).")
         except Exception as e:
@@ -145,51 +216,24 @@ class EarthEngineImageFetcherTool(BaseTool):
         
         try:
             # Define a resolução desejada
-            scale = 100  # metros por pixel
+            scale = 10  # metros por pixel
+            max_pixels = 256  # pixels por lado
 
-            # Define o ROI com base na escala
-            ROI = self.create_safe_roi(lat, lon, scale)
-
-            # Get the image collections on the start and end dates
-            #first_collection = self.get_image_collection(ROI, start_date)
-            #second_collection = self.get_image_collection(ROI, end_date)
-            collection = self.get_image_collection(ROI)
-
-            first_image = self.get_nearest_image(collection, start_date)
-            second_image = self.get_nearest_image(collection, end_date)
+            # Processa os 4 quadrantes
+            results = self.process_quadrant_images(lat, lon, start_date, end_date, scale, max_pixels)
             
-            if not first_image:
-                return f"No image found for start date: {start_date.date()}"
-            
-            if not second_image:
-                return f"No image found for end date: {end_date.date()}"
-
-            print("Trying to get images...")
-            
-            # Get the image URLs
-            first_image_url = self.get_image_url(first_image, ROI, scale)
-            second_image_url = self.get_image_url(second_image, ROI, scale)
-            
-            print("First image URL:", first_image_url, file=sys.stderr)
-            print("Second image URL:", second_image_url, file=sys.stderr)
-
-            # Get the image filenames
-            first_image_filename = f"satellite_image_{lat}_{lon}_{start_date.strftime('%Y-%m-%d')}.zip"
-            second_image_filename = f"satellite_image_{lat}_{lon}_{end_date.strftime('%Y-%m-%d')}.zip"
-            
-            # Download the images
-            first_image_result = self.download_image_if_not_exists(first_image_url, first_image_filename)
-            second_image_result = self.download_image_if_not_exists(second_image_url, second_image_filename)
+            if "error" in results:
+                return results["error"]
 
             print("[**DEBUG**] _run INPUTS:", lat, lon, first_date, second_date, file=sys.stderr)
             logging.debug(f"[**DEBUG**] _run INPUTS: {lat}, {lon}, {first_date}, {second_date}")
 
-            print("[**DEBUG**] _run OUTPUTS:", first_image_result, second_image_result, file=sys.stderr)
-            logging.debug(f"[**DEBUG**] _run OUTPUTS: {first_image_result}, {second_image_result}")
+            print("[**DEBUG**] _run OUTPUTS:", results, file=sys.stderr)
+            logging.debug(f"[**DEBUG**] _run OUTPUTS: {results}")
             
-            return {
-                "sat_image_path_1": first_image_result,
-                "sat_image_path_2": second_image_result
-            }
+            return json.dumps({
+                "first_date_images": results["first_date"],
+                "second_date_images": results["second_date"]
+            })
         except Exception as e:
-            return f"Error getting download URL or fetching image: {str(e)}"
+            return f"Error processing quadrants: {str(e)}"

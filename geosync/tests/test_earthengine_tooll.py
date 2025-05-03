@@ -24,8 +24,8 @@ if __name__ == "__main__":
 
     # Test with JSON input
     input_json = {
-        "lat": 38.7169,
-        "lon": -9.1399,
+        "lat": 40.4952269,
+        "lon": -3.5733733,
         "first_date": "2023-04-06",
         "second_date": "2024-04-13"
     }

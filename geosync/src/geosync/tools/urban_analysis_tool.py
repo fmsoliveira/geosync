@@ -105,15 +105,43 @@ class UrbanGrowthAnalyzerTool(BaseTool):
         n_buildings_2 = len(contours2)
         new_buildings = n_buildings_2 - n_buildings_1
 
+        # # Imagem de diferença
+        # diff_mask = (mask2.astype(int) - mask1.astype(int)) > 0
+        # diff_img_path = os.path.join(os.getcwd(), "output", "new_buildings_diff.png")
+        # os.makedirs("output", exist_ok=True)
+        # Image.fromarray((diff_mask * 255).astype(np.uint8)).save(diff_img_path)
+        
+        # return {
+        #     "Edifícios na data 1": n_buildings_1,
+        #     "Edifícios na data 2": n_buildings_2,
+        #     "Novas construções": new_buildings,
+        #     "Imagem de diferença guardada em": diff_img_path
+        # }
         # Imagem de diferença
         diff_mask = (mask2.astype(int) - mask1.astype(int)) > 0
-        diff_img_path = os.path.join(os.getcwd(), "output", "new_buildings_diff.png")
         os.makedirs("output", exist_ok=True)
+        diff_img_path = os.path.join(os.getcwd(), "output", "new_buildings_diff.png")
         Image.fromarray((diff_mask * 255).astype(np.uint8)).save(diff_img_path)
-        
+
+        # Guardar imagens originais com contornos desenhados
+        orig1 = cv2.imread(image_path_1)
+        orig2 = cv2.imread(image_path_2)
+        # Redimensionar para 256x256 para coincidir com a máscara
+        orig1 = cv2.resize(orig1, (256, 256))
+        orig2 = cv2.resize(orig2, (256, 256))
+        # Desenhar contornos a vermelho
+        cv2.drawContours(orig1, contours1, -1, (0, 0, 255), 2)
+        cv2.drawContours(orig2, contours2, -1, (0, 0, 255), 2)
+        buildings_img1_path = os.path.join(os.getcwd(), "output", "buildings_detected_first_image.png")
+        buildings_img2_path = os.path.join(os.getcwd(), "output", "buildings_detected_second_image.png")
+        cv2.imwrite(buildings_img1_path, orig1)
+        cv2.imwrite(buildings_img2_path, orig2)
+
         return {
             "Edifícios na data 1": n_buildings_1,
             "Edifícios na data 2": n_buildings_2,
             "Novas construções": new_buildings,
-            "Imagem de diferença guardada em": diff_img_path
+            "Imagem de diferença guardada em": diff_img_path,
+            "Edifícios identificados na primeira imagem": buildings_img1_path,
+            "Edifícios identificados na segunda imagem": buildings_img2_path
         }
