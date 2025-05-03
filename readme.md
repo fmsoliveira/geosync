@@ -89,6 +89,13 @@ Send a POST request to the API endpoint /crew with a JSON payload:
 }
 ```
 
+### 6. Run the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+
 The API will return the NDVI difference results and file paths to the generated satellite images.
 
 ## 🗺️ Roadmap
@@ -98,3 +105,4 @@ The API will return the NDVI difference results and file paths to the generated 
 - [x] 🏙️ Urban analysis tool (🚧 🛠️ work in progress)
 - [ ] 🖥️ Frontend application (Vite + React) for user interaction
 - [ ] 🧑‍💻 Support for additional geospatial analyses
+```
