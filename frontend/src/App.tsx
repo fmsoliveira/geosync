@@ -2,20 +2,20 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
-import { gql, useQuery } from "@apollo/client";
+//import { gql, useQuery } from "@apollo/client";
 
-const GET_EXAMPLE = gql`
-  query Example {
-    exampleField
-  }
-`;
+//const GET_EXAMPLE = gql`
+//  query Example {
+//    exampleField
+//  }
+//`;
 
 function App() {
   const [count, setCount] = useState(0);
-  const { data, loading, error } = useQuery(GET_EXAMPLE);
+  //const { data, loading, error } = useQuery(GET_EXAMPLE);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  //if (loading) return <p>Loading...</p>;
+  //if (error) return <p>Error: {error.message}</p>;
 
   return (
     <>
